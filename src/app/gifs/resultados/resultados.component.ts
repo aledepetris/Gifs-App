@@ -11,6 +11,10 @@ export class ResultadosComponent {
     return this.gifService.resultados;
   }
 
+  get ultimoBuscado() : string {
+    return this.gifService.historial[0];
+  }
+
   constructor ( private gifService: GifsService) {}
 
 }

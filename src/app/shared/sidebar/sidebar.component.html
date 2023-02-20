@@ -3,9 +3,10 @@
   <hr class="text-light">
   <div class="list-group list-reset">
     <a *ngFor="let resultado of historial"
-      href="#"
-      class="list-group-item list-group-item-action">
-      {{ resultado | titlecase }}
+        (click)="buscar( resultado )"
+        href="#"
+        class="list-group-item list-group-item-action">
+        {{ resultado | titlecase }}
     </a>
   </div>
 </div>
