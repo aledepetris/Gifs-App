@@ -1,64 +1,74 @@
-import { query } from '@angular/animations';
-import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { SearchGifsResponse, Gif } from '../interfaces/gifs.interface';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { SearchResponse, Gif } from '../interfaces/gifs.interface';
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({ providedIn: 'root' })
 export class GifsService {
 
-  private apiKey    : string = '1AabxaL9DczIfTIfmzb6Lmv0jms71FBs';
-  private _historial: string[] = [];
-  private servicioUrl: string = 'https://api.giphy.com/v1/gifs'
+  public gifList: Gif[] = [];
 
-  // TODO: Cambiar el tipo de datos.
-  public resultados : Gif[] = [];
+  private _tagsHistory: string[] = [];
+  private apiKey:       string = '1AabxaL9DczIfTIfmzb6Lmv0jms71FBs';
+  private serviceUrl:   string = 'https://api.giphy.com/v1/gifs';
 
-  get historial() {
-    return [...this._historial];
+  constructor( private http: HttpClient ) {
+    this.loadLocalStorage();
+    console.log('Gifs Service Ready');
   }
 
-  constructor ( private http: HttpClient ) {
-
-    this._historial = JSON.parse( localStorage.getItem('historial')!) || [];
-
-    this.resultados = JSON.parse( localStorage.getItem('resultados')!) || [];
-
-
-    // if (localStorage.getItem('historial')) {
-    //   this._historial = JSON.parse( localStorage.getItem('historial')! )
-    // }
-
+  get tagsHistory() {
+    return [...this._tagsHistory];
   }
 
-  buscarGifs( query: string ) {
+  private organizeHistory(tag: string) {
+    tag = tag.toLowerCase();
 
-    query = query.trim().toLocaleLowerCase();
-
-    const index = this._historial.indexOf(query);
-    if (index !== -1) {
-      this._historial.splice(index, 1);
+    if ( this._tagsHistory.includes( tag ) ) {
+      this._tagsHistory = this._tagsHistory.filter( (oldTag) => oldTag !== tag )
     }
 
-    this._historial.unshift( query );
-    this._historial = this._historial.splice(0, 10);
+    this._tagsHistory.unshift( tag );
+    this._tagsHistory = this.tagsHistory.splice(0,10);
+    this.saveLocalStorage();
+  }
 
-    localStorage.setItem('historial', JSON.stringify( this._historial ))
+  private saveLocalStorage():void {
+    localStorage.setItem('history', JSON.stringify( this._tagsHistory ));
+  }
+
+  private loadLocalStorage():void {
+    if( !localStorage.getItem('history')) return;
+
+    this._tagsHistory = JSON.parse( localStorage.getItem('history')! );
+
+    if ( this._tagsHistory.length === 0 ) return;
+    this.searchTag( this._tagsHistory[0] );
+  }
+
+
+  searchTag( tag: string ):void {
+    if ( tag.length === 0 ) return;
+    this.organizeHistory(tag);
 
     const params = new HttpParams()
-    .set('apiKey', this.apiKey)
-    .set('limit', '10')
-    .set('q', query);
+      .set('api_key', this.apiKey )
+      .set('limit', '10' )
+      .set('q', tag )
 
-    this.http.get<SearchGifsResponse>(`${ this.servicioUrl }/search`, { params })
-      .subscribe(( response ) => {
-        console.log( response.data );
-        this.resultados = response.data;
-        localStorage.setItem('resultados', JSON.stringify( this.resultados ))
-      } )
+    this.http.get<SearchResponse>(`${ this.serviceUrl }/search`, { params })
+      .subscribe( resp => {
+
+        this.gifList = resp.data;
+        // console.log({ gifs: this.gifList });
+
+      });
+
+
+
 
 
 
   }
+
+
 }
